@@ -1,0 +1,21 @@
+[config]
+bart_weights   = facebook/bart-large-cnn
+bart_tokenizer = facebook/bart-large
+model_name     = lobart1k_arxiv_truncate_v0
+save_dir       = trained_models
+dataset        = arxiv
+data_dir       = ../arxiv_sum0/lib/data/
+optimizer      = adam
+max_target_len = 400
+lr0            = 0.002
+warmup         = 20000
+batch_size     = 1
+gradient_accum = 2
+valid_step     = 20000
+total_step     = 20000000
+early_stop     = 3
+random_seed    = 2525
+use_gpu        = True
+selfattn       = full
+multiple_input_span = 2
+window_width        = 256
