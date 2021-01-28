@@ -76,31 +76,49 @@ Decoding (Inference) BART & LoBART
         [--length_penalty LENGTH_PENALTY]
         [--random_order [RANDOM_ORDER]]
         [--use_gpu [True|False]]
-        
+
 Training Hierarchical Model
 --------------------------------------
     python train/train_hiermodel.py conf.txt
 
  see conf/hiermodel_v1.txt for an example of config file
- 
+
 Training-time Content Selection
 --------------------------------------
     cd traintime_select
     python oracle_select_{pad|nopad}_{dataset}.py
-    
+
  the configurations are defined manually in the scripts (see VARIABLES in captital)
- 
+
 Test-time Content Selection (Running MCS)
 --------------------------------------
- **step1**: running decoding for get attention & extractive labelling predictions 
- 
+ **step1**: running decoding for get attention & extractive labelling predictions
+
     python decode/decode_hiermodel_attn.py
     python decode/decode_hiermodel_ext.py
-    
+
 **step2**: combine the two results
 
     python decode/mcs_inference.py
-    
+
+
+Analysis
+-----------------------------------------
+Requires package ```pytorch_memlab```
+- localattn = True if LoBART, False if BART
+- X = max. input length
+- Y = max. target length
+- W = local attention width (if localattn == True)
+- B = batch size
+**Memeory (BART & LoBART)**
+
+    python analysis/memory_inspect.py localattn X Y W B
+
+**Time**
+
+    python analysis/speed_inspect.py localattn X Y W B num_iterations
+
+
 Results using this repository
 -----------------------------------------
 - Simple fine-tuning vanilla BART(1k) on truncated data
