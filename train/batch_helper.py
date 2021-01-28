@@ -4,8 +4,8 @@ import pickle
 import random
 import torch
 import numpy as np
-
-from podcast_processor import PodcastEpisode
+from nltk import tokenize
+from podcast_processor import PodcastEpisode, PodcastEpisodeXtra
 from arxiv_processor import ResearchArticle
 
 
@@ -13,6 +13,7 @@ from arxiv_processor import ResearchArticle
 # DEFINE PATH HERE:
 BRASS_SET_PATH   = "data/spotify-podcasts/summarisation-task-brass-set/filtered-episode-ids.txt"
 DEV150_SET_PATH  = "data/spotify-podcasts/no-audio/spotify-podcasts-2020/dev-set/150-episode-ids.txt"
+
 def load_podcast_data(data_dir, sets):
     podcasts = []
     if sets == -1:
@@ -41,6 +42,21 @@ def load_dev150_set_ids():
         id = int(line.strip())
         ids[i] = id
     return ids
+
+def load_podcast_data_xtra(dir, sets):
+    """
+    For training Hierarchical Model (with extractive labels)
+    """
+    podcasts = []
+    if sets == -1:
+        sets = [x for x in range(10)]
+    for i in sets:
+        path  = "{}/podcast_ext1024_set{}.bin".format(dir, i)
+        with open(path, 'rb') as f:
+            set_of_podcasts = pickle.load(f, encoding="bytes")
+        podcasts.extend(set_of_podcasts)
+        print('loaded:', path)
+    return podcasts
 
 # --------- arXiv / PubMed --------- #
 def load_articles(path):
@@ -208,3 +224,155 @@ class ArticleBatcher(object):
             shifted_target_attention_mask = shifted_target_attention_mask.to(self.device)
 
         return shifted_target_ids, shifted_target_attention_mask
+
+class HierPodcastBatcher(PodcastBatcher):
+    def __init__(self, tokenizer, config, podcasts, torch_device):
+        super().__init__(tokenizer, config, config['summary_length'], podcasts, torch_device)
+
+        self.num_utterances = config['num_utterances']
+        self.num_words      = config['num_words']
+        self.summary_length = config['summary_length']
+
+    # Override
+    def get_a_batch(self, batch_size):
+        """
+        return input, u_len, w_len, target, tgt_len, ext_label
+        """
+        input = np.zeros((batch_size, self.num_utterances, self.num_words), dtype=np.long)
+        u_len = np.zeros((batch_size), dtype=np.long)
+        w_len = np.zeros((batch_size, self.num_utterances), dtype=np.long)
+        ext_target = np.zeros((batch_size, self.num_utterances), dtype=np.float32)
+
+        target  = np.zeros((batch_size, self.summary_length), dtype=np.long)
+        target.fill(103) # in BERT 103 is [MASK] --- I should've used 0, which is pad_token
+        tgt_len = np.zeros((batch_size), dtype=np.int)
+
+        batch_count = 0
+        while batch_count < batch_size:
+            if not self.is_podcast_good(self.cur_id):
+                self.increment_data_id()
+                continue
+
+            # ENCODER
+            sentences = self.podcasts[self.cur_id].tran_split
+            num_sentences = self.podcasts[self.cur_id].num_sent
+            if num_sentences > self.num_utterances:
+                num_sentences = self.num_utterances
+                sentences = sentences[:self.num_utterances]
+            u_len[batch_count] = num_sentences
+
+            for j, sent in enumerate(sentences):
+                token_ids = self.tokenizer.encode(sent.lower(), add_special_tokens=False)
+                utt_len = len(token_ids)
+                if utt_len > self.num_words:
+                    utt_len = self.num_words
+                    token_ids = token_ids[:self.num_words]
+                input[batch_count,j,:utt_len] = token_ids
+                w_len[batch_count,j] = utt_len
+
+            # Extractive Sum Label
+            positive_postions = [pi for pi in self.podcasts[self.cur_id].ext_label if pi < self.num_utterances]
+            ext_target[batch_count][positive_postions] = 1.0
+
+            # DECODER
+            description   = self.podcasts[self.cur_id].description.lower()
+            concat_tokens = [101]
+            sentences = tokenize.sent_tokenize(description)
+            for j, sent in enumerate(sentences):
+                token_ids = self.tokenizer.encode(sent, add_special_tokens=False)
+                concat_tokens.extend(token_ids)
+                concat_tokens.extend([102]) # [SEP]
+            tl = len(concat_tokens)
+            if tl > self.summary_length:
+                concat_tokens = concat_tokens[:self.summary_length]
+                tl = self.summary_length
+            target[batch_count, :tl] = concat_tokens
+            tgt_len[batch_count] = tl
+
+            # increment
+            self.increment_data_id()
+            batch_count += 1
+
+        u_len_max = u_len.max()
+        w_len_max = w_len.max()
+
+        input = torch.from_numpy(input[:, :u_len_max, :w_len_max]).to(self.device)
+        u_len = torch.from_numpy(u_len).to(self.device)
+        w_len = torch.from_numpy(w_len[:, :u_len_max]).to(self.device)
+        target = torch.from_numpy(target).to(self.device)
+        ext_target = torch.from_numpy(ext_target[:, :u_len_max]).to(self.device)
+
+
+        return input, u_len, w_len, target, tgt_len, ext_target
+
+
+
+class HierArticleBatcher(ArticleBatcher):
+    def __init__(self, tokenizer, config, podcasts, torch_device):
+        super().__init__(tokenizer, config, config['summary_length'], podcasts, torch_device)
+
+        self.num_utterances = config['num_utterances']
+        self.num_words      = config['num_words']
+        self.summary_length = config['summary_length']
+
+    # Override
+    def get_a_batch(self, batch_size):
+        """
+        return input, u_len, w_len, target, tgt_len, ext_label
+        """
+        input = np.zeros((batch_size, self.num_utterances, self.num_words), dtype=np.long)
+        u_len = np.zeros((batch_size), dtype=np.long)
+        w_len = np.zeros((batch_size, self.num_utterances), dtype=np.long)
+
+        target  = np.zeros((batch_size, self.summary_length), dtype=np.long)
+        target.fill(103) # in BERT 103 is [MASK] --- I should've used 0, which is pad_token
+        tgt_len = np.zeros((batch_size), dtype=np.int)
+
+        batch_count = 0
+        while batch_count < batch_size:
+            # ENCODER
+            sentences = self.articles[self.cur_id].article_text
+            num_sentences = len(self.articles[self.cur_id].article_text)
+            if num_sentences > self.num_utterances:
+                num_sentences = self.num_utterances
+                sentences = sentences[:self.num_utterances]
+            u_len[batch_count] = num_sentences
+
+            for j, sent in enumerate(sentences):
+                token_ids = self.tokenizer.encode(sent.lower(), add_special_tokens=False, max_length=50000)
+                utt_len = len(token_ids)
+                if utt_len > self.num_words:
+                    utt_len = self.num_words
+                    token_ids = token_ids[:self.num_words]
+                input[batch_count,j,:utt_len] = token_ids
+                w_len[batch_count,j] = utt_len
+
+            # DECODER
+            description   =  " ".join(self.articles[self.cur_id].abstract_text).lower()
+            concat_tokens = [101]
+            sentences = tokenize.sent_tokenize(description)
+            for j, sent in enumerate(sentences):
+                token_ids = self.tokenizer.encode(sent, add_special_tokens=False, max_length=50000)
+                concat_tokens.extend(token_ids)
+                concat_tokens.extend([102]) # [SEP]
+            tl = len(concat_tokens)
+            if tl > self.summary_length:
+                concat_tokens = concat_tokens[:self.summary_length]
+                tl = self.summary_length
+            target[batch_count, :tl] = concat_tokens
+            tgt_len[batch_count] = tl
+
+            # increment
+            self.increment_data_id()
+            batch_count += 1
+
+        u_len_max = u_len.max()
+        w_len_max = w_len.max()
+
+        input = torch.from_numpy(input[:, :u_len_max, :w_len_max]).to(self.device)
+        u_len = torch.from_numpy(u_len).to(self.device)
+        w_len = torch.from_numpy(w_len[:, :u_len_max]).to(self.device)
+        target = torch.from_numpy(target).to(self.device)
+
+
+        return input, u_len, w_len, target, tgt_len

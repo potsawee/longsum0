@@ -36,7 +36,7 @@ Setting in conf.txt, e.g. conf/bart_podcast_v0.txt
 - **random_seed** - random_seed
 - **use_gpu** - True | False
 
-Decoding (Inference)
+Decoding (Inference) BART & LoBART
 --------------------------------------
 **decoding**:
 
@@ -57,3 +57,9 @@ Decoding (Inference)
         [--length_penalty LENGTH_PENALTY]
         [--random_order [RANDOM_ORDER]]
         [--use_gpu [True|False]]
+        
+Training Hierarchical Model
+--------------------------------------
+    python train/train_hiermodel.py conf.txt
+
+ see conf/hiermodel_v1.txt for an example of config file

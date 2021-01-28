@@ -1,0 +1,25 @@
+[config]
+model_name     = bart1k_podcast_truncate_v0
+save_dir       = trained_models
+dataset        = podcast
+data_dir       = ../summariser2/lib/data/f1_oracle/
+optimizer      = adam
+num_utterances = 1000
+num_words      = 50
+summary_length = 144
+vocab_size     = 30522
+embedding_dim  = 256
+rnn_hidden_size = 512
+dropout        = 0.1
+num_layers_enc = 2
+num_layers_dec = 1
+gamma          = 0.2
+lr0            = 0.002
+warmup         = 10000
+batch_size     = 1
+gradient_accum = 2
+valid_step     = 20000
+total_step     = 20000000
+early_stop     = 3
+random_seed    = 2525
+use_gpu        = True

@@ -196,4 +196,4 @@ if __name__ == "__main__":
     if(len(sys.argv) == 2):
         run_training(sys.argv[1])
     else:
-        print("Usage: python train_bart.py config_path")
+        print("Usage: python train_abssum.py config_path")
