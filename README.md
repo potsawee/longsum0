@@ -104,17 +104,13 @@ Test-time Content Selection (Running MCS)
 
 Analysis
 -----------------------------------------
-Requires package ```pytorch_memlab```
-- localattn = True if LoBART, False if BART
-- X = max. input length
-- Y = max. target length
-- W = local attention width (if localattn == True)
-- B = batch size
+Requires package ```pytorch_memlab```. Args: localattn = True if LoBART, False if BART, X = max. input length, Y = max. target length, W = local attention width (if localattn == True), B = batch size.
+
 **Memeory (BART & LoBART)**
 
     python analysis/memory_inspect.py localattn X Y W B
 
-**Time**
+**Time (BART & LoBART)**
 
     python analysis/speed_inspect.py localattn X Y W B num_iterations
 
