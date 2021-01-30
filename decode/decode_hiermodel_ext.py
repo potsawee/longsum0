@@ -23,9 +23,9 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 MODEL_NAME = "HIER_EncDec_DEC3_v3-step30000"
 model_type = 'encdec' # enc | encdec
 
-DATA_PATH          = "/home/alta/summary/pm574/podcast_sum0/lib/data/podcast_set_dev1_brass.bin"
-TRAINED_MODEL_PATH = "/home/alta/summary/pm574/summariser2/lib/trained_models/{}.pt".format(MODEL_NAME)
-DECODE_DIR         = "/home/alta/summary/pm574/summariser2/system_output_ext/{}/{}".format(MODEL_NAME, 'set_dev1_brass')
+DATA_PATH          = "../podcast_sum0/lib/data/podcast_set_dev1_brass.bin"
+TRAINED_MODEL_PATH = "../summariser2/lib/trained_models/{}.pt".format(MODEL_NAME)
+DECODE_DIR         = "../summariser2/system_output_ext/{}/{}".format(MODEL_NAME, 'set_dev1_brass')
 
 NUM_UTTERANCES = 1400
 NUM_WORDS      = 100
@@ -138,7 +138,7 @@ def decode(start_id, end_id):
 
 def write_reference():
     REFERENCE_DATA_PATH = "lib/test_data/f1_oracle/podcast_ext1024_testset.bin"
-    out_path = "/home/alta/summary/pm574/summariser2/reference/f1_oracle/testset.txt"
+    out_path = "../summariser2/reference/f1_oracle/testset.txt"
 
     with open(REFERENCE_DATA_PATH, 'rb') as f:
         podcasts = pickle.load(f, encoding="bytes")
