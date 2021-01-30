@@ -25,6 +25,17 @@ Pipeline (before training starts)
 - Train BART or LoBART using data above
 - Decode BART or LoBART (note that if MCS is applied, run MCS first i.e. save your data from MCS somewhere and load it)
 
+Data Preparation
+--------------------------------------
+**Spotify Podcast**
+- Download link: https://podcastsdataset.byspotify.com/
+- See ```data/podcast_processor.py```
+- We recommend splitting the data into chunks such that each chuck contains 10k instance, e.g. id0-id9999 in podcast_set0
+
+**arXiv & PubMed**
+- Download link: https://github.com/armancohan/long-summarization
+- See ```data/arxiv_processor.py``` (very minimal pre-processing done)
+
 Training BART & LoBART
 --------------------------------------
 **Training**:
