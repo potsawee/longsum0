@@ -1,5 +1,8 @@
 Long-Span Summarization
 =====================================================
+Code for ACL 2021 paper "[Long-Span Summarization via Local Attention and Content Selection](https://arxiv.org/abs/2105.03801)" (previously the title was "Long-Span Dependencies in Transformer-based Summarization Systems").
+
+
 Requirements
 --------------------------------------
 - python 3.7
@@ -99,19 +102,19 @@ Training-time Content Selection
     cd traintime_select
     python oracle_select_{pad|nopad}_{dataset}.py
 
- the configurations are defined manually in the scripts (see VARIABLES in captital)
+ the configurations are defined manually in the scripts (see VARIABLES in captital) --- manual/absolute paths in these scripts will be changed soon!
 
 Test-time Content Selection (Running MCS)
 --------------------------------------
- **step1**: running decoding for get attention & extractive labelling predictions
+ **step1**: running decoding for get attention & extractive labelling predictions (per sample)
 
-    python decode/decode_hiermodel_attn.py
-    python decode/decode_hiermodel_ext.py
+    python decode/inference_hiermodel.py
 
-**step2**: combine the two results
+**step2**: combine all test samples into one file
 
-    python decode/mcs_inference.py
+    python decode/inference_hiermodel_combine.py
 
+See decode/README.md for more information about arguments.
 
 Analysis
 -----------------------------------------
@@ -136,7 +139,7 @@ Results using this repository
 |  arXiv  |  44.96  |  17.25  |  39.76  |
 |  PubMed |  45.06  |  18.27  |  40.84  |
 
-- Our best results using LoBART(N=4096,W=1024) + MCS (gamma=0.2)
+- Our best results using LoBART(N=4096,W=1024) + MCS
 
 |   Data  | ROUGE-1 | ROUGE-2 | ROUGE-L |
 |:-------:|:-------:|:-------:|:-------:|
@@ -146,4 +149,4 @@ Results using this repository
 
 Trained Weights
 -----------------------------------------
-To be released, stay tuned!!
+Links to Google Drive to be added!
