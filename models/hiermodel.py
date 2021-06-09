@@ -48,6 +48,168 @@ class EncoderDecoder(nn.Module):
         # FOR multiple GPU training --- cannot have scores_uw (size error)
         # dec_output = self.decoder(target, enc_output_dict)
         # return dec_output
+        
+    def decode_beamsearch(self, input, u_len, w_len, decode_dict):
+        """
+        this method is meant to be used at inference time
+            input = input to the encoder
+            u_len = utterance lengths
+            w_len = word lengths
+            decode_dict:
+                - k                = beamwidth for beamsearch
+                - batch_size       = batch_size
+                - time_step        = max_summary_length
+                - vocab_size       = 30522 for BERT
+                - device           = cpu or cuda
+                - start_token_id   = ID of the start token
+                - stop_token_id    = ID of the stop token
+                - alpha            = length normalisation
+                - length_offset    = length offset
+                - keypadmask_dtype = torch.bool
+        """
+        k                = decode_dict['k']
+        batch_size       = decode_dict['batch_size']
+        time_step        = decode_dict['time_step']
+        vocab_size       = decode_dict['vocab_size']
+        device           = decode_dict['device']
+        start_token_id   = decode_dict['start_token_id']
+        stop_token_id    = decode_dict['stop_token_id']
+        alpha            = decode_dict['alpha']
+        penalty_ug       = decode_dict['penalty_ug']
+        # keypadmask_dtype = decode_dict['keypadmask_dtype'] ---> this is causing on the API that checks for torch1.2 (commented out on 11 Jan 2021)
+
+        if batch_size != 1: raise ValueError("batch size must be 1")
+
+        # create beam array & scores
+        beams       = [None for _ in range(k)]
+        beam_scores = np.zeros((k,))
+
+        # we should only feed through the encoder just once!!
+        enc_output_dict = self.encoder(input, u_len, w_len) # memory
+        u_output = enc_output_dict['u_output']
+        w_output = enc_output_dict['w_output']
+        # w_len    = enc_output_dict['w_len']
+        enc_time_step   = w_output.size(1)
+        enc_time_step_u = u_output.size(1)
+
+        # we run the decoder time_step times (auto-regressive)
+        tgt_ids = torch.zeros((time_step,), dtype=torch.int64).to(device)
+        tgt_ids[0] = start_token_id
+
+        for i in range(k): beams[i] = tgt_ids
+
+        finished_beams = []
+        finished_beams_scores = []
+        finished_attn = []
+        finished_attn_u = []
+
+        # initial hidden state
+        ht = torch.zeros((self.decoder.num_layers, 1, self.decoder.dec_hidden_size), dtype=torch.float).to(self.device)
+        l = u_len[0]
+        ht[:,0,:] = u_output[0,l-1,:].unsqueeze(0)
+
+        beam_ht = [None for _ in range(k)]
+        for _k in range(k): beam_ht[_k] = ht.clone()
+
+        finish = False
+
+        attn_scores_array = [torch.zeros((time_step, enc_time_step)) for _ in range(k)]
+        attn_scores_u_array = [torch.zeros((time_step, enc_time_step_u)) for _ in range(k)]
+
+        for t in range(time_step-1):
+            if finish: break
+
+            decoder_output_t_array = torch.zeros((k*vocab_size,))
+
+            for i, beam in enumerate(beams):
+
+                # inference decoding
+                decoder_output, beam_ht[i], attn_scores, attn_scores_u, _ = self.decoder.forward_step(beam[t:t+1].unsqueeze(0), beam_ht[i], enc_output_dict, logsoftmax=True)
+
+                attn_scores_array[i][t, :] = attn_scores[0,0,:]
+                attn_scores_u_array[i][t, :] = attn_scores_u[0,0,:]
+                # check if there is STOP_TOKEN emitted in the previous time step already
+                # i.e. if the input at this time step is STOP_TOKEN
+                if beam[t] == stop_token_id: # already stop
+                    decoder_output[0, :] = float('-inf')
+                    decoder_output[0, stop_token_id] = 0.0 # to ensure STOP_TOKEN will be picked again!
+
+                decoder_output_t_array[i*vocab_size:(i+1)*vocab_size] = decoder_output[0]
+
+                # add previous beam score bias
+                decoder_output_t_array[i*vocab_size:(i+1)*vocab_size] += beam_scores[i]
+
+                if penalty_ug > 0.0:
+                    # Penalty term for repeated uni-gram
+                    unigram_dict = {}
+                    for tt in range(t+1):
+                        v = beam[tt].cpu().numpy().item()
+                        if v not in unigram_dict: unigram_dict[v] = 1
+                        else: unigram_dict[v] += 1
+                    for vocab_id, vocab_count in unigram_dict.items():
+                        decoder_output_t_array[(i*vocab_size)+vocab_id] -= penalty_ug*vocab_count/(t+1)
+
+                # only support batch_size = 1!
+                if t == 0:
+                    decoder_output_t_array[(i+1)*vocab_size:] = float('-inf')
+                    break
+
+
+            # Argmax
+            topk_scores, topk_ids = torch.topk(decoder_output_t_array, k, dim=-1)
+            scores = topk_scores.double().cpu().numpy()
+            indices = topk_ids.double().cpu().numpy()
+
+            new_beams = [torch.zeros((time_step,), dtype=torch.int64).to(device) for _ in range(k)]
+            new_attn_scores_array = [torch.zeros((time_step, enc_time_step)) for _ in range(k)]
+            new_attn_scores_u_array = [torch.zeros((time_step, enc_time_step_u)) for _ in range(k)]
+            new_beam_ht = [None for _ in range(k)]
+
+            for c_idx, node in enumerate(indices):
+
+                vocab_idx = node % vocab_size
+                beam_idx  = int(node / vocab_size)
+
+                new_beams[c_idx][:t+1] = beams[beam_idx][:t+1]
+                new_beams[c_idx][t+1]  = vocab_idx
+
+                new_beam_ht[c_idx]     = beam_ht[beam_idx]
+
+                new_attn_scores_array[c_idx][:t+1 ,:] = attn_scores_array[beam_idx][:t+1 ,:]
+                new_attn_scores_u_array[c_idx][:t+1 ,:] = attn_scores_u_array[beam_idx][:t+1 ,:]
+
+                # if there is a beam that has [END_TOKEN] --- store it
+                if vocab_idx == stop_token_id:
+                    finished_beams.append(new_beams[c_idx][:t+1+1])
+                    finished_beams_scores.append(scores[c_idx] / t**alpha)
+                    finished_attn.append(new_attn_scores_array[c_idx][:t+1 ,:])
+                    finished_attn_u.append(new_attn_scores_u_array[c_idx][:t+1 ,:])
+                    # print("beam{}: [{:.5f}]".format(c_idx, scores[c_idx] / t**alpha), bert_tokenizer.decode(new_beams[c_idx][:t+1+1].cpu().numpy()))
+                    scores[c_idx] = float('-inf')
+
+            beams = new_beams
+            beam_ht = new_beam_ht
+            attn_scores_array = new_attn_scores_array
+            attn_scores_u_array = new_attn_scores_u_array
+            beam_scores = scores
+
+            # print("=========================  t = {} =========================".format(t))
+            # for ik in range(k):
+            #     print("beam{}: [{:.5f}]".format(ik, scores[ik]),bert_tokenizer.decode(beams[ik].cpu().numpy()[:t+2]))
+            # import pdb; pdb.set_trace()
+
+        if len(finished_beams_scores) > 0:
+            max_id = finished_beams_scores.index(max(finished_beams_scores))
+            summary_ids = finished_beams[max_id].cpu().numpy()
+            attn_score  = finished_attn[max_id]
+            attn_score_u  = finished_attn_u[max_id]
+        else:
+            summary_ids = beams[0].cpu().numpy()
+            attn_score  = attn_scores_array[0]
+            attn_score_u = attn_scores_u_array[0]
+
+        return summary_ids, attn_score, attn_score_u
+
 
 class HierarchicalGRU(nn.Module):
     def __init__(self, vocab_size, embedding_dim, rnn_hidden_size, num_layers, dropout, device):

@@ -37,7 +37,10 @@ def process(load_path, save_path):
 
 if __name__ == "__main__":
 
-    PATH_TO_DOWNLOAD = None # put where arXiv & pubmed are downloaded here
+    PATH_TO_DOWNLOAD = '/home/alta/summary/pm574/data' # put where arXiv & pubmed are downloaded here
+
+    if PATH_TO_DOWNLOAD is None:
+        raise Exception("PATH_TO_DOWNLOAD is None, specify where arXiv & pubmed are downloaded here")
 
     # --------- arXiv ---------- #
     arxiv_train_path = "{}/arXiv/arxiv-dataset/train.txt".format(PATH_TO_DOWNLOAD) # 203037
