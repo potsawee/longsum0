@@ -109,7 +109,7 @@ Training-time Content Selection
 
 See traintime_select/README.md for more information about arguments.
 
-Test-time Content Selection (Running MCS)
+Test-time Content Selection (e.g. MCS inference)
 --------------------------------------
  **step1**: running decoding for get attention & extractive labelling predictions (per sample)
 
@@ -144,14 +144,31 @@ Results using this repository
 |  arXiv  |  44.96  |  17.25  |  39.76  |
 |  PubMed |  45.06  |  18.27  |  40.84  |
 
-- Our best results using LoBART(N=4096,W=1024) + MCS
+- Our best results using LoBART(N=4096,W=1024) + ContentSelection. The outputs of our systems are available -- click the dataset in the table to download (note that after the unzipped files are id_decoded.txt).
 
 |   Data  | ROUGE-1 | ROUGE-2 | ROUGE-L |
 |:-------:|:-------:|:-------:|:-------:|
-| Podcast |  27.81  |  10.30  |   19.61 |
-|  arXiv  |  48.79  |  20.55  |  43.31  |
-|  PubMed |  48.06  |  20.96  |  43.56  |
+| [Podcast](https://drive.google.com/file/d/1f2IpAjrhLU_z5uImB1jmaHHwXkaIPRDR/view?usp=sharing) |  27.81  |  10.30  |   19.61 |
+|  [arXiv](https://drive.google.com/file/d/1b1JHD5VkBhhvYjkEKT0YLDsq5CHtviHJ/view?usp=sharing)  |  48.79  |  20.55  |  43.31  |
+|  [PubMed](https://drive.google.com/file/d/1pM7SH6UL5HZozhJxzqJrFKxnkiaVYfvq/view?usp=sharing) |  48.06  |  20.96  |  43.56  |
 
 Trained Weights
 -----------------------------------------
-Links to Google Drive to be added!
+TRC=Truncate-training, ORC=Oracle-training
+
+|   Model  | Trained on Data |
+|:--------:|:------------:|
+|LoBART(N=4096,W=1024)\_TRC|[Podcast](https://drive.google.com/file/d/1ZXQ0KP3CHJxWZdK88ebNslV6hlcLgTvA/view?usp=sharing), [arXiv](https://drive.google.com/file/d/1gwX-FCXib5WF9p-dTx-mWIQ3lPL7Psn8/view?usp=sharing), [PubMed](https://drive.google.com/file/d/18TtN-jwW4WadBAUA7P8vcgB6x4BlFHJf/view?usp=sharing)|
+|LoBART(N=4096,W=1024)\_ORC|[Podcast](https://drive.google.com/file/d/1JdZpJsgrvjTqA1NqPbiKteNL3CuTjMRC/view?usp=sharing), [arXiv](https://drive.google.com/file/d/1H9Bw2ighKT8LJe-iNK2iLk7lwiQAEli0/view?usp=sharing), [PubMed](https://drive.google.com/file/d/1vvJHKmPI1E284RugWuW_ZaFJO1taG-pb/view?usp=sharing)|
+|Hierarchical-Model|[Podcast](https://drive.google.com/file/d/1jF7ydOXVNBj01-aWi18_60H2_D7sFsFo/view?usp=sharing), [arXiv](https://drive.google.com/file/d/1EDZ-XfhDxQUwtbb3y_bH5T7zL_rnUklS/view?usp=sharing), [PubMed](https://drive.google.com/file/d/1yUfY7hEZTQfInYM9BeAdTGsdhz0KRiBa/view?usp=sharing)|
+
+Citation
+-----------------------------------------
+
+	@article{manakul2021longspan,
+		title={Long-Span Summarization via Local Attention and Content Selection}, 
+		author={Potsawee Manakul and Mark J. F. Gales},
+		journal={arXiv preprint arXiv:2105.03801},
+		year={2021}
+	}
+    
