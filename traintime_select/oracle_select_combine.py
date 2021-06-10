@@ -7,36 +7,35 @@ from tqdm import tqdm
 from podcast_processor import PodcastEpisode
 from arxiv_processor import ResearchArticle
 
-def inference_hiermodel_combine(args):
+def combine(args):
     dataset     = args['dataset']
-    decoded_dir = args['decoded_dir']
+    output_dir = args['output_dir']
     original_datapath = args['original_datapath']
     filtered_datapath = args['filtered_datapath']
 
-    print("original_datapath =", original_datapath)
     with open(original_datapath, 'rb') as f:
         data = pickle.load(f, encoding="bytes")
     print("len(data) = {}".format(len(data)))
 
-    for id in tqdm(range(len(data))):
-        with open("{}/{}_decoded.pk.bin".format(decoded_dir, id), 'rb') as f:
-            filtered_sentences = pickle.load(f, encoding="bytes")
+    for i in tqdm(range(len(data))):
+        out_path = "{}/{}_select.txt".format(output_dir, i)
+        with open(out_path, 'r') as f:
+            x = f.read()
         if args['dataset'] == 'podcast':
-            data[id].transcription = " ".join(filtered_sentences)
+            data[i].transcription = x
         elif args['dataset'] == 'arxiv' or args['dataset'] == 'pubmed':
-            data[id].article_text = filtered_sentences
+            pass # TODO
         else:
             raise ValueError("Dataset not exist: only |podcast|arxiv|pubmed|")
 
     with open(filtered_datapath, "wb") as f:
         pickle.dump(data, f)
-    print("dumped:", filtered_datapath)
 
 def get_combine_arguments(parser):
     # parser.register("type", "bool", lambda v: v.lower() == "true")
     # file paths
     parser.add_argument('--dataset',           type=str, required=True)
-    parser.add_argument('--decoded_dir',       type=str, required=True)
+    parser.add_argument('--output_dir',       type=str, required=True)
     parser.add_argument('--original_datapath', type=str, required=True)
     parser.add_argument('--filtered_datapath', type=str, required=True)
 
@@ -47,4 +46,4 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser = get_combine_arguments(parser)
     args = vars(parser.parse_args())
-    inference_hiermodel_combine(args)
+    combine(args)

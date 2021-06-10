@@ -99,10 +99,15 @@ Training Hierarchical Model
 
 Training-time Content Selection
 --------------------------------------
-    cd traintime_select
-    python oracle_select_{pad|nopad}_{dataset}.py
+ **step1**: running oracle selection {pad|nopad} per sample/instance
 
- the configurations are defined manually in the scripts (see VARIABLES in captital) --- manual/absolute paths in these scripts will be changed soon!
+    python traintime_select/oracle_select_{pad|nopad}.py
+
+**step2**: combine all test samples into one file
+
+    python traintime_select/oracle_select_combine.py
+
+See traintime_select/README.md for more information about arguments.
 
 Test-time Content Selection (Running MCS)
 --------------------------------------
