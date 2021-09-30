@@ -136,15 +136,33 @@ Requires package ```pytorch_memlab```. Args: localattn = True if LoBART, False i
 
 Results using this repository
 -----------------------------------------
-- Simple fine-tuning vanilla BART(1k) on truncated data
+The outputs of our systems are available -- click the dataset in the table to download (note that after the unzipped files are id_decoded.txt).
+
+- BART(1k,truncate)
 
 |   Data  | ROUGE-1 | ROUGE-2 | ROUGE-L |
 |:-------:|:-------:|:-------:|:-------:|
-| Podcast |  26.43  |   9.22  |   18.35 |
-|  arXiv  |  44.96  |  17.25  |  39.76  |
-|  PubMed |  45.06  |  18.27  |  40.84  |
+| [Podcast](https://drive.google.com/file/d/1-jCanm14LUIeozU5GwIYcptiUtxPtUK2/view?usp=sharing) |  26.43  |   9.22  |   18.35 |
+|  [arXiv](https://drive.google.com/file/d/1-LzzOsMshwf4NUK-RDLqVa0M81ul4CwR/view?usp=sharing)  |  44.96  |  17.25  |  39.76  |
+|  [PubMed](https://drive.google.com/file/d/1-EvvQQ8ijk9cjua8vRMetXzJqorrsxqC/view?usp=sharing) |  45.06  |  18.27  |  40.84  |
 
-- Our best results using LoBART(N=4096,W=1024) + ContentSelection. The outputs of our systems are available -- click the dataset in the table to download (note that after the unzipped files are id_decoded.txt).
+- BART(1k,ORC-padrand) + ContentSelection
+
+|   Data  | ROUGE-1 | ROUGE-2 | ROUGE-L |
+|:-------:|:-------:|:-------:|:-------:|
+| [Podcast](https://drive.google.com/file/d/1-klu-SZV_3JGuk-TORhZRaDGIP1BxalS/view?usp=sharing) |  27.28  |  9.82   |  19.00  |
+|  [arXiv](https://drive.google.com/file/d/1-XfjvTFNVP3JszlLP2WNRneP106d8ftQ/view?usp=sharing)  |  47.68  |  19.77  |  42.25  |
+|  [PubMed](https://drive.google.com/file/d/1-ACWhTSI2NQJIoTXo05Rcm5q3L39L9m-/view?usp=sharing) |  46.49  |  19.45  |  42.04  |
+
+- LoBART(N=4096,W=1024,ORC-padrand)
+
+|   Data  | ROUGE-1 | ROUGE-2 | ROUGE-L |
+|:-------:|:-------:|:-------:|:-------:|
+| [Podcast](https://drive.google.com/file/d/1Y85RUahLn0wuwks1w7Fp7BrhASpfVIO3/view?usp=sharing) |  27.36  |  10.04  |  19.33  |
+|  [arXiv](https://drive.google.com/file/d/1-K7oEBwIXMybqfPgM6jbn9cMnx5WXfIy/view?usp=sharing)  |  46.59  |  18.72  |  41.24  |
+|  [PubMed](https://drive.google.com/file/d/1-Gbqxc4zkxd3CGX84LtqloZjjMIlHF3H/view?usp=sharing) |  47.47  |  20.47  |  43.02  |
+
+- LoBART(N=4096,W=1024,ORC-padrand) + ContentSelection. This is the best configuration reported in the paper.
 
 |   Data  | ROUGE-1 | ROUGE-2 | ROUGE-L |
 |:-------:|:-------:|:-------:|:-------:|
@@ -165,10 +183,16 @@ TRC=Truncate-training, ORC=Oracle-training
 Citation
 -----------------------------------------
 
-	@article{manakul2021longspan,
-		title={Long-Span Summarization via Local Attention and Content Selection}, 
-		author={Potsawee Manakul and Mark J. F. Gales},
-		journal={arXiv preprint arXiv:2105.03801},
-		year={2021}
+	@inproceedings{manakul-gales-2021-long,
+	    title = "Long-Span Summarization via Local Attention and Content Selection",
+	    author = "Manakul, Potsawee  and Gales, Mark",
+	    booktitle = "Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers)",
+	    month = aug,
+	    year = "2021",
+	    address = "Online",
+	    publisher = "Association for Computational Linguistics",
+	    url = "https://aclanthology.org/2021.acl-long.470",
+	    doi = "10.18653/v1/2021.acl-long.470",
+	    pages = "6026--6041",
 	}
     
