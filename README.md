@@ -136,7 +136,7 @@ Requires package ```pytorch_memlab```. Args: localattn = True if LoBART, False i
 
 Results using this repository
 -----------------------------------------
-The outputs of our systems are available -- click the dataset in the table to download (note that after the unzipped files are id_decoded.txt).
+The outputs of our systems are available -- click the dataset in the table to download (note that after the unzipped files are id_decoded.txt). Note that podcast IDs are according to the order in metadata, and arxiv/pubmed IDs are according to the order in text file in the original data download. If you need to convert these IDs into article_id, refer to [id_lists](https://drive.google.com/file/d/116Hw7aWp13AU3K65Bu0jzxgOMOSplT4B/view?usp=sharing). 
 
 - BART(1k,truncate)
 
