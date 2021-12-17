@@ -1,12 +1,15 @@
+import os
 import sys
-# sys.path.insert(0, '../data/') # to import modules in data
+sys.path.insert(0, os.getcwd()+'/data/') # to import modules in data
+
 import pickle
 import random
 import torch
 import numpy as np
 from nltk import tokenize
-from podcast_processor import PodcastEpisode, PodcastEpisodeXtra
+from podcast_processor import PodcastEpisode
 from arxiv_processor import ResearchArticle
+from create_extractive_label import PodcastEpisodeXtra, ResearchArticleXtra
 
 
 # --------- Spotify Podcast --------- #
@@ -308,8 +311,8 @@ class HierPodcastBatcher(PodcastBatcher):
 
 
 class HierArticleBatcher(ArticleBatcher):
-    def __init__(self, tokenizer, config, podcasts, torch_device):
-        super().__init__(tokenizer, config, config['summary_length'], podcasts, torch_device)
+    def __init__(self, tokenizer, config, articles, torch_device):
+        super().__init__(tokenizer, config, config['summary_length'], articles, torch_device)
 
         self.num_utterances = config['num_utterances']
         self.num_words      = config['num_words']
@@ -347,6 +350,10 @@ class HierArticleBatcher(ArticleBatcher):
                 input[batch_count,j,:utt_len] = token_ids
                 w_len[batch_count,j] = utt_len
 
+            # Extractive Sum Label
+            positive_postions = [pi for pi in self.articles[self.cur_id].ext_label if pi < self.num_utterances]
+            ext_target[batch_count][positive_postions] = 1.0
+
             # DECODER
             description   =  " ".join(self.articles[self.cur_id].abstract_text).lower()
             concat_tokens = [101]
@@ -373,6 +380,6 @@ class HierArticleBatcher(ArticleBatcher):
         u_len = torch.from_numpy(u_len).to(self.device)
         w_len = torch.from_numpy(w_len[:, :u_len_max]).to(self.device)
         target = torch.from_numpy(target).to(self.device)
+        ext_target = torch.from_numpy(ext_target[:, :u_len_max]).to(self.device)
 
-
-        return input, u_len, w_len, target, tgt_len
+        return input, u_len, w_len, target, tgt_len, ext_target

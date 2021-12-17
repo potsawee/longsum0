@@ -35,17 +35,6 @@ class PodcastEpisode(object):
         self.transcription = transcription
         self.description = description
 
-class PodcastEpisodeXtra(PodcastEpisode):
-    def __init__(self, podcast_id, transcription, description, max_abssum_len, podcast_set=None, podcast_set_i=None):
-        super().__init__(podcast_id, transcription, description)
-        # In addition to podcast_id, transcription, description
-        # it adds tran_split, num_sent, extractive label
-        self.tran_split = tokenize.sent_tokenize(transcription)
-        self.num_sent   = len(self.tran_split)
-        # self.ext_label  = create_ext_label_recall(self.tran_split, description, max_abssum_len=max_abssum_len)
-        # self.ext_label  = create_ext_label_f1(podcast_set, podcast_set_i)
-        self.ext_label  = create_ext_label_f1_testset(podcast_set_i)
-
 def parse_json(json_path):
     with open(json_path, 'r') as file: x = file.read()
     y = json.loads(x)

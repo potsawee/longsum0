@@ -1,0 +1,11 @@
+*__pycache__
+trained_models/
+system_output/
+write_pt_weights.py
+data/arxiv
+decode/legacy
+traintime_select/legacy/
+todo.txt
+notebooks/
+data/temp/
+.ipynb_checkpoints/
