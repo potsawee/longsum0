@@ -16,8 +16,9 @@ from transformers import BertTokenizer
 
 from utils import parse_config, print_config, adjust_lr
 from batch_helper import load_podcast_data_xtra, load_articles, HierPodcastBatcher, HierArticleBatcher
-from podcast_processor import PodcastEpisode, PodcastEpisodeXtra
+from podcast_processor import PodcastEpisode
 from arxiv_processor import ResearchArticle
+from create_extractive_label import PodcastEpisodeXtra, ResearchArticleXtra
 from hiermodel import EncoderDecoder, EXTLabeller
 
 def run_training(config_path):
