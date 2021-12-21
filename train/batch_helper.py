@@ -326,6 +326,7 @@ class HierArticleBatcher(ArticleBatcher):
         input = np.zeros((batch_size, self.num_utterances, self.num_words), dtype=np.long)
         u_len = np.zeros((batch_size), dtype=np.long)
         w_len = np.zeros((batch_size, self.num_utterances), dtype=np.long)
+        ext_target = np.zeros((batch_size, self.num_utterances), dtype=np.float32)
 
         target  = np.zeros((batch_size, self.summary_length), dtype=np.long)
         target.fill(103) # in BERT 103 is [MASK] --- I should've used 0, which is pad_token

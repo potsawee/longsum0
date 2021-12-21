@@ -54,14 +54,12 @@ def run_training(config_path):
 
     # Data ---- podcast | arxiv | pubmed
     if config['dataset'] == 'podcast':
-        # train_data  = load_podcast_data(config['data_dir'], sets=-1)   # -1 = training set, -1 means set0,..,set9 (excluding 10)
-        train_data  = load_podcast_data_xtra(config['data_dir'], sets=[10])   # -1 = training set, -1 means set0,..,set9 (excluding 10)
+        train_data  = load_podcast_data(config['data_dir'], sets=-1)   # -1 = training set, -1 means set0,..,set9 (excluding 10)
         val_data    = load_podcast_data_xtra(config['data_dir'], sets=[10]) # 10 = valid set
         batcher     = HierPodcastBatcher(bert_tokenizer, config, train_data, torch_device)
         val_batcher = HierPodcastBatcher(bert_tokenizer, config, val_data, torch_device)
     elif config['dataset'] == 'arxiv':
-        # train_data  = load_articles("{}/arxiv_train.pk.bin".format(config['data_dir']))
-        train_data  = load_articles("{}/arxiv_val.pk.bin".format(config['data_dir']))
+        train_data  = load_articles("{}/arxiv_train.pk.bin".format(config['data_dir']))
         val_data    = load_articles("{}/arxiv_val.pk.bin".format(config['data_dir']))
         batcher     = HierArticleBatcher(bert_tokenizer, config, train_data, torch_device)
         val_batcher = HierArticleBatcher(bert_tokenizer, config, val_data, torch_device)
