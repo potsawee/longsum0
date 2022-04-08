@@ -1,4 +1,5 @@
 import pickle
+import random
 import numpy as np
 from nltk import tokenize
 from rouge import Rouge
@@ -71,24 +72,47 @@ def f1_oracle_generate(sentences, reference):
         else: #terminate
             print("num sentences found:" , len(keep_idx))
             return sorted(keep_idx)
-
-    print("take all sentences:" , len(keep_idx))
     return sorted(keep_idx)
 
+def rouge2recall_generate(sentences, reference):
+    # rouge_pltrdy is case sensitive
+    reference = reference.lower()
+    scores = [None for _ in range(len(sentences))]
+    count_nonzero_rouge2recall = 0
+    for i, sent in enumerate(sentences):
+        sent = sent.lower()
+        try:
+            rouge_scores = rouge_pltrdy.get_scores(sent, reference)
+            rouge2recall = rouge_scores[0]['rouge-2']['r']
+            scores[i] = rouge2recall
+        except ValueError:
+            scores[i] = 0.0
+        except RecursionError:
+            scores[i] = 0.5 # just assign 0.5 as this sentence is simply too long
+        if scores[i] > 0.0: count_nonzero_rouge2recall += 1
+    scores = np.array(scores)
+    num_postive = sum(a > 0 for a in scores)
+    if num_postive > 0:
+        keep_idx = np.argsort(scores)[::-1][:num_postive] # only consider positive ones
+    else:
+        keep_idx = []
+    return sorted(keep_idx)
 
-def generate_ext_label_podcast_data(data_path, output_dir, start_id, end_id):
+def generate_ext_label_podcast_data(data_path, output_dir, start_id, end_id, shuffle=False):
     with open(data_path, 'rb') as f:
         podcasts = pickle.load(f, encoding="bytes")
     print("len(podcasts) = {}".format(len(podcasts)))
 
     ids = [x for x in range(start_id, end_id)]
+    if shuffle: random.shuffle(ids)
 
     for i in ids:
         out_path  = "{}/{}_ext_label.txt".format(output_dir, i)
         sentences = tokenize.sent_tokenize(podcasts[i].transcription)
         reference = podcasts[i].description
 
-        keep_idx = f1_oracle_generate(sentences, reference)
+        # keep_idx = f1_oracle_generate(sentences, reference)
+        keep_idx = rouge2recall_generate(sentences, reference)
 
         # if found nothing, selecting the top3 longest sentences
         if len(keep_idx) == 0:
@@ -100,22 +124,25 @@ def generate_ext_label_podcast_data(data_path, output_dir, start_id, end_id):
         with open(out_path, "w") as f: f.write(ext_label_string)
         print("processed:", out_path)
 
-def generate_ext_label_arxiv_data(data_path, output_dir, start_id, end_id):
+def generate_ext_label_arxiv_data(data_path, output_dir, start_id, end_id, shuffle=False):
     """
     for arxiv & pubmed
     """
     with open(data_path, 'rb') as f:
         articles = pickle.load(f, encoding="bytes")
+    articles = articles[start_id:end_id]
     print("len(articles) = {}".format(len(articles)))
 
     ids = [x for x in range(start_id, end_id)]
+    if shuffle: random.shuffle(ids)
 
     for i in ids:
         out_path  = "{}/{}_ext_label.txt".format(output_dir, i)
-        sentences = articles[i].article_text
-        reference = " ".join(articles[i].abstract_text)
+        sentences = articles[i-start_id].article_text
+        reference = " ".join(articles[i-start_id].abstract_text)
 
-        keep_idx = f1_oracle_generate(sentences, reference)
+        # keep_idx = f1_oracle_generate(sentences, reference)
+        keep_idx = rouge2recall_generate(sentences, reference)
 
         # if found nothing, selecting the top3 longest sentences
         if len(keep_idx) == 0:

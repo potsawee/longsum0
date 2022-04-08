@@ -63,10 +63,14 @@ def load_podcast_data_xtra(dir, sets):
 
 # --------- arXiv / PubMed --------- #
 def load_articles(path):
+    """
+    this function can load either ResearchArticle or ResearchArticleXtra
+    """
     with open(path, 'rb') as f:
         articles = pickle.load(f, encoding="bytes")
     print("loaded:", path)
     return articles
+
 
 class PodcastBatcher(object):
     def __init__(self, tokenizer, bart_config, max_target_len, podcasts, torch_device):
@@ -84,7 +88,7 @@ class PodcastBatcher(object):
 
 
     def shuffle_data(self):
-        print("Suhffle data")
+        print("Shuffle data")
         random.shuffle(self.podcasts)
         return
 
